@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg id='openai-symbol' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='red' d='M29.71,13.09A8.09,8.09,0,0,0,20.34,2.68a8.08,8.08,0,0,0-13.7,2.9A8.08,8.08,0,0,0,2.3,18.9,8,8,0,0,0,3,25.45a8.08,8.08,0,0,0,8.69,3.87,8,8,0,0,0,6,2.68,8.09,8.09,0,0,0,7.7-5.61,8,8,0,0,0,5.33-3.86A8.09,8.09,0,0,0,29.71,13.09Zm-12,16.82a6,6,0,0,1-3.84-1.39l.19-.11,6.37-3.68a1,1,0,0,0,.53-.91v-9l2.69,1.56a.08.08,0,0,1,.05.07v7.44A6,6,0,0,1,17.68,29.91ZM4.8,24.41a6,6,0,0,1-.71-4l.19.11,6.37,3.68a1,1,0,0,0,1,0l7.79-4.49V22.8a.09.09,0,0,1,0,.08L13,26.6A6,6,0,0,1,4.8,24.41ZM3.12,10.53A6,6,0,0,1,6.28,7.9v7.57a1,1,0,0,0,.51.9l7.75,4.47L11.85,22.4a.14.14,0,0,1-.09,0L5.32,18.68a6,6,0,0,1-2.2-8.18Zm22.13,5.14-7.78-4.52L20.16,9.6a.08.08,0,0,1,.09,0l6.44,3.72a6,6,0,0,1-.9,10.81V16.56A1.06,1.06,0,0,0,25.25,15.67Zm2.68-4-.19-.12-6.36-3.7a1,1,0,0,0-1.05,0l-7.78,4.49V9.2a.09.09,0,0,1,0-.09L19,5.4a6,6,0,0,1,8.91,6.21ZM11.08,17.15,8.38,15.6a.14.14,0,0,1-.05-.08V8.1a6,6,0,0,1,9.84-4.61L18,3.6,11.61,7.28a1,1,0,0,0-.53.91ZM12.54,14,16,12l3.47,2v4L16,20l-3.47-2Z'/></svg>">
+<title>One-Page Chat</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f7f7;
+    padding: 10px;
+  }
+  form {
+    background-color: #fff;
+    max-width: 600px;
+    padding: 20px;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+    padding-left: 5px;
+  }
+  select, input, textarea {
+    font-size: 14px;
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  textarea {
+    height: 100px;
+  }
+  button {
+    font-size: 16px;
+    display: inline-block;
+    color: #fff;
+    background-color: #007bff;
+    padding: 10px 20px;
+    margin-top: 10px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  .drop-zone {
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    max-width: 100%;
+    height: 300px;
+    margin-top: 5px;
+    border: 1px dashed #4e89ae;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .drop-zone img {
+    display: none;
+    position: absolute;
+    object-fit: cover;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 4px;
+  }
+  #preset {
+    font-size: 16px;
+    font-weight: bold;
+    width: auto;
+    margin-top: 10px;
+    padding-left: 0;
+    border: none;
+  }
+  #modelOutput {
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: #e9ecef;
+    height: 200px;
+    border-radius: 4px;
+  }
+  @media (max-width: 600px) {
+    body {
+      padding: 5px;
+    }
+    form {
+      padding: 10px;
+    }
+  }
+</style>
+</head>
+
+<body>
+<form>
+<div class="hide-provider">
+<label for="provider">Provider:</label>
+<select id="provider" onchange="updateModel(event)">
+  <option value="OpenAI">OpenAI</option>
+  <option value="Google">Google</option>
+</select>
+</div>
+
+<div class="hide-provider">
+<label for="model">Model:</label>
+<select id="model">
+</select>
+</div>
+
+<div class="hide-provider">
+<label for="apiKey">API Key:</label>
+<input type="text" id="apiKey" value=""/>
+</div>
+
+<div class="hide-prompt">
+<select id="preset" onchange="updatePormpt(event)">
+  <option value="product-review">看看今天买了啥</option>
+  <option value="meeting-summary">看看开会说了啥</option>
+</select>
+<textarea id="userPrompt">
+</textarea>
+</div>
+
+<div class="hide-image">
+<label for="imageInput">Photo:</label>
+<input type="file" id="imageInput" style="display: none;" accept="image/*" onchange="loadImageFromFile(event)">
+<div class="drop-zone" onclick="document.getElementById('imageInput').click()">
+  Click to Upload
+  <img id="image-preview" src="#">
+</div>
+</div>
+
+<div class="hide-content">
+<label for="userContent">Content:</label>
+<input type="file" id="textInput" style="display: none;" accept=".txt,.text,.md" onchange="loadTextFromFile(event)">
+<textarea id="userContent"></textarea>
+</div>
+
+<div class="hide-buttons">
+<button type="button" onclick="document.getElementById('textInput').click()">Load</button>
+<button type="button" onclick="submitRequest()">Submit</button>
+<button type="button" onclick="clearFields()">Clear</button>
+</div>
+
+<div>
+<h2>Response:</h2>
+<textarea id="modelOutput" readonly></textarea>
+<button onclick="saveText()">Save as TXT</button>
+</div>
+</form>
+
+<script>
+function updateModel() {
+  var provider = document.getElementById('provider').value;
+  var model = document.getElementById('model');
+  document.getElementById('apiKey').value = '';
+  model.innerHTML = '';
+
+  if (provider === 'OpenAI') {
+    model.options.add(new Option('GPT-4o', 'gpt-4o'));
+  } else if (provider === 'Google') {
+    model.options.add(new Option('Gemini 1.5 Flash', 'gemini-1.5-flash-latest'));
+    model.options.add(new Option('Gemini 1.5 Pro', 'gemini-1.5-pro-latest'));
+  }
+}
+
+function updatePormpt() {
+  const preset = document.getElementById('preset').value;
+  const userPrompt = document.getElementById('userPrompt')
+  const divContent = document.getElementsByClassName('hide-content')[0];
+  const divImange = document.getElementsByClassName('hide-image')[0];
+  if (preset==='product-review') {
+    divContent.style.display = 'none';
+    divImange.style.display = 'block';
+    userPrompt.value = `
+请用一段充满激情和浮夸的中文，赞美我最近购买的一件商品！
+
+要突出以下几点:
+• 材质: [例如: 奢华的丝绸，坚固的钛合金， 柔软的羊毛]
+• 功能: [例如: 提升效率，方便生活， 艺术性的表达]
+• 价值: [例如:  带来的快乐，提升的生活品质，激发的灵感]
+
+目标:  让人感觉到这次购物绝对物超所值， 甚至是一种命运的邂逅!
+
+示例:
+
+示例 1: “我的天哪！这件[商品名称]简直是惊天地泣鬼神！它那[材质]散发着高贵的气息，[功能]更是让我生活充满了便捷和乐趣！自从拥有了它，我的生活品质简直是直线上升！这哪是花钱，这分明是捡到宝了！”
+
+示例 2: “我被这件[商品名称]深深地迷住了！[材质]的质感让我爱不释手，[功能]更是精准地满足了我的所有需求！它带来的[价值]远远超过了它的价格， 这简直是命运般的相遇！我宣布，这是我做过最明智的购物决定！”
+    `.trim();
+  } else if (preset==='meeting-summary') {
+    divContent.style.display = 'block';
+    divImange.style.display = 'none';
+    userPrompt.value = `
+Optimize the provided transcription from a meeting by dividing it into three sections in Simplified Chinese:
+
+1. Summary: Extract the key information from the meeting and present it in a bullet-point list. Focus on the main topics discussed, decisions made, and any significant viewpoints expressed.
+2. Conclusion: Write a concise paragraph summarizing the overall outcome and general consensus achieved in the meeting. Highlight any major conclusions or strategic decisions that were reached.
+3. Todos: Identify and list all actionable items or tasks that were decided upon during the meeting. Format these as bullet points, being specific about the tasks, responsible individuals, and any deadlines associated with these actions.
+
+Ensure the transcription is accurate and fully captures the essence of the meeting, and present it clearly in Simplified Chinese.
+
+Following is the transcription content:
+    `.trim();
+  }
+}
+
+function loadImageFromFile(event) {
+  const input = event.target.files[0];
+  if (input) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          imagePreview = document.getElementById('image-preview');
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(input);
+  } else {
+      document.getElementById('modelOutput').value = "Error reading photo.";
+  }
+}
+
+function loadTextFromFile(event) {
+  const input = event.target.files[0];
+  if (input) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          const text = e.target.result;
+          document.getElementById('userContent').value = text;
+      };
+      reader.readAsText(input);
+  } else {
+      document.getElementById('modelOutput').value = "Error reading file.";
+  }
+}
+
+function submitRequest() {
+  const provider = document.getElementById('provider').value;
+  const model = document.getElementById('model').value;
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const userPrompt = document.getElementById('userPrompt').value.trim();
+  const userContent = document.getElementById('userContent').value.trim();
+  const imagePreview = document.getElementById('image-preview');
+  const modelOutput = document.getElementById('modelOutput');
+  const textData = `${userPrompt}\n\n${userContent}`.trim();
+
+  // display loading text
+  modelOutput.value = 'Loading...';
+  if (
+    !provider || !model || !apiKey || !userPrompt ||
+    (!userContent && !imagePreview.src.startsWith('data'))
+  ) {
+    modelOutput.value = 'Empty api key or content.';
+    return;
+  }
+
+  // build request
+  var url = '';
+  var headers = {};
+  var data = {};
+  if (provider === 'OpenAI') {
+    url = `https://gateway.ai.cloudflare.com/v1/8fce031e2e0f943f1e7698f74b8802c1/text-summary/openai/chat/completions`;
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+    data = {
+      'model': model,
+      'messages': [
+        {
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': textData}
+          ]
+        }
+      ],
+      'max_tokens': 2048
+    };
+    if (imagePreview.src.startsWith('data')) {
+      data['messages'][0]['content'].push({'type': 'image_url', 'image_url': {'url': imagePreview.src}});
+    }
+  } else if (provider === 'Google') {
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    headers = {
+      'Content-Type': 'application/json'
+    };
+    data = {
+      'contents': {
+        'role': 'user',
+        'parts': [
+          {'text': textData}
+        ]
+      }
+    };
+    if (imagePreview.src.startsWith('data')) {
+      const mimeType = imagePreview.src.split(';')[0].split(':')[1];
+      const base64 = imagePreview.src.split(',')[1];
+      data['contents']['parts'].push({'inlineData': {"mimeType": mimeType, "data": base64}});
+    }
+
+  } else {
+    modelOutput.value = 'Invalid provider.';
+    return;
+  }
+
+  fetch(url, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (provider === 'OpenAI') {
+      modelOutput.value = data.choices[0].message.content;
+    } else if (provider === 'Google') {
+      modelOutput.value = data.candidates[0].content.parts[0].text;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    modelOutput.value = 'Error in fetching data.';
+  });
+}
+
+function clearFields() {
+  const imagePreview = document.getElementById('image-preview');
+  imagePreview.style.display = 'none';
+  imagePreview.src = '#';
+  document.getElementById('userContent').value = '';
+  document.getElementById('modelOutput').value = '';
+}
+
+function saveText() {
+  const text = document.getElementById('modelOutput').value;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const anchor = document.createElement('a');
+  anchor.download = "summarized_content.txt";
+  anchor.href = window.URL.createObjectURL(blob);
+  anchor.target = "_blank";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+}
+
+window.onload = function() {
+  const params = {};
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  for (const [key, value] of urlParams.entries()) {
+      params[key] = value;
+  }
+  if (params['provider']) {
+    const allProviders = [...document.getElementById('provider').options].map(o => o.value);
+    if (allProviders.includes(params['provider'])) {
+      document.getElementById('provider').value = params['provider'];
+    }
+  }
+  updateModel();
+  if (params['model']) {
+    const allModels = [...document.getElementById('model').options].map(o => o.value);
+    if (allModels.includes(params['model'])) {
+      document.getElementById('model').value = params['model'];
+    }
+  }
+  if (params['apiKey']) {
+    document.getElementById('apiKey').value = params['apiKey'];
+    for (const e of document.getElementsByClassName('hide-provider')) {
+      e.style.display = 'none';
+    }
+  }
+  const presetSelector = document.getElementById('preset');
+  if (params['layout']==='meeting-summary') {
+    presetSelector.selectedIndex = "1";
+  }
+  updatePormpt();
+};
+</script>
+</body>
+</html>
